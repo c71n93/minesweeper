@@ -22,7 +22,7 @@ class Field(private val height: Int, private val width: Int) {
         LEFT,
         RIGHT
     }
-    /* TODO: Is it efficient to check all cells? It definitely
+    /* fixme: Is it efficient to check all cells? It definitely
         will be inefficient if there is, for example, only 1 mine */
     fun placeMines(numOfMines: Int) {
         val minesCoordinates = generateMineCoordinates(numOfMines)
@@ -50,12 +50,12 @@ class Field(private val height: Int, private val width: Int) {
             println()
         }
     }
-    /* TODO: very slow method */
+    /* fixme: very slow method */
     private fun generateMineCoordinates(numOfMines: Int): MutableList<Int> {
         val minesCoordinates = MutableList(numOfMines) { -1 }
         for (i in 0 until numOfMines) {
             var randomCoordinate: Int
-            /* TODO: this is very stupid decision, because on the last iteration
+            /* fixme: this is very stupid decision, because on the last iteration
                  there is a small chance to get suitable random number, so this
                  loop will make a lot of iterations until it finally got it */
             do {
