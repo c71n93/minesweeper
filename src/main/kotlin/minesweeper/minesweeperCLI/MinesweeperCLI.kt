@@ -13,14 +13,23 @@ class MinesweeperCLI(height: Int, width: Int) {
         _field.generateField(numOfMines)
     }
 
+    //fixme
     fun play() {
-        _field.printCloseField()
+        _field.printCurrentHiddenField()
         do {
             requestSetOrDeleteMark()
-            _field.printCloseField()
-        } while (!_field.isFieldMarkedCorrect())
+            _field.printCurrentHiddenField()
+        } while (true)
         println("Congratulations! You found all the mines!")
     }
+//    fun play() {
+//        _field.printCurrentHiddenField()
+//        do {
+//            requestSetOrDeleteMark()
+//            _field.printCurrentHiddenField()
+//        } while (!_field.isFieldMarkedCorrect())
+//        println("Congratulations! You found all the mines!")
+//    }
 
     private fun requestNumberOfMines(): Int {
         print("How many mines do you want on the field? ")
@@ -30,9 +39,17 @@ class MinesweeperCLI(height: Int, width: Int) {
         var isMarkSetOrDeleted: Boolean
         do {
             print("Set/delete mines marks (x and y coordinates): ")
-            val column = _scanner.nextInt()
+            val col = _scanner.nextInt()
             val row = _scanner.nextInt()
-            isMarkSetOrDeleted = _field.setOrDeleteMark(row - 1, column - 1)
+            val markType = _scanner.nextLine()
+            //fixme
+            isMarkSetOrDeleted = true
+            if (markType == "mine") {
+                isMarkSetOrDeleted = _field.setOrDeleteMineMark(row - 1, col - 1)
+            } else if (markType == "free") {
+                isMarkSetOrDeleted = true
+                _field.setOrDeleteFreeMark(row - 1, col - 1)
+            }
         } while (!isMarkSetOrDeleted)
     }
 }
