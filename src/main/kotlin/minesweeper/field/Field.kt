@@ -7,7 +7,6 @@ const val MINE_CELL = 'X'
 const val MARKED_CELL = '*'
 
 data class Cell(var content: Char = CLOSED_CELL, var isMarked: Boolean = false)
-
 class Field(private val _height: Int, private val _width: Int) {
     private val _field = MutableList(_height) { MutableList(_width) { Cell() } }
 
@@ -25,20 +24,6 @@ class Field(private val _height: Int, private val _width: Int) {
             }
         }
     }
-
-    fun printOpenField() {
-        printColumnCoordinates()
-        printHorizontalDelimiters()
-        for (i in 0.._field.lastIndex) {
-            print("$i|")
-            for (cell in _field[i]) {
-                print(cell.content.toString())
-            }
-            println("|")
-        }
-        printHorizontalDelimiters()
-    }
-
     fun printCloseField() {
         printColumnCoordinates()
         printHorizontalDelimiters()
@@ -59,12 +44,29 @@ class Field(private val _height: Int, private val _width: Int) {
         }
         printHorizontalDelimiters()
     }
-    fun setOrDeleteMark(row: Int, col: Int) = if (_field[row][col].content in '1'..'7') { //todo: validate row and col
-        println("There is a number here!")
-        false
-    } else {
-        _field[row][col].isMarked = true
-        true
+    fun setOrDeleteMark(row: Int, col: Int) = when {
+        row > _height - 1 || col > _width - 1 -> {
+            println("Coordinates out of bounds")
+            false
+        }
+        _field[row][col].content in '1'..'7' -> {
+            println("There is a number here!")
+            false
+        }
+        else -> {
+            _field[row][col].isMarked = !_field[row][col].isMarked
+            true
+        }
+    }
+    fun isFieldMarkedCorrect(): Boolean {
+        for (i in 0.._field.lastIndex) {
+            for (cell in _field[i]) {
+                if (cell.isMarked != (cell.content == MINE_CELL)) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     // took this solution from here: https://hyperskill.org/projects/8/stages/48/implement#solutions-190159
@@ -80,7 +82,6 @@ class Field(private val _height: Int, private val _width: Int) {
             }
         }
     }
-
     private fun printColumnCoordinates() {
         print(" |")
         for (i in 1.._width) {
@@ -88,7 +89,6 @@ class Field(private val _height: Int, private val _width: Int) {
         }
         println("|")
     }
-
     private fun printHorizontalDelimiters() {
         print("-|")
         for (i in 1.._width) {
