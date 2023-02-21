@@ -1,6 +1,7 @@
 package minesweeper.minesweeperCLI
 
 import minesweeper.field.Field
+import minesweeper.field.GameStatus
 import java.util.Scanner
 
 class MinesweeperCLI(height: Int, width: Int) {
@@ -13,23 +14,22 @@ class MinesweeperCLI(height: Int, width: Int) {
         _field.generateField(numOfMines)
     }
 
-    //fixme
     fun play() {
         _field.printCurrentHiddenField()
         do {
             requestSetOrDeleteMark()
-            _field.printCurrentHiddenField()
-        } while (true)
-        println("Congratulations! You found all the mines!")
+            if (_field.fieldStatus != GameStatus.DEFEAT) {
+                _field.printCurrentHiddenField()
+            }
+        } while (_field.fieldStatus == GameStatus.GAME)
+        if (_field.fieldStatus == GameStatus.DEFEAT) {
+            _field.printExplodedField()
+            println("You stepped on a mine and failed!")
+        } else if (_field.fieldStatus == GameStatus.VICTORY){
+            println("Congratulations! You found all the mines!")
+        }
+
     }
-//    fun play() {
-//        _field.printCurrentHiddenField()
-//        do {
-//            requestSetOrDeleteMark()
-//            _field.printCurrentHiddenField()
-//        } while (!_field.isFieldMarkedCorrect())
-//        println("Congratulations! You found all the mines!")
-//    }
 
     private fun requestNumberOfMines(): Int {
         print("How many mines do you want on the field? ")
@@ -41,14 +41,12 @@ class MinesweeperCLI(height: Int, width: Int) {
             print("Set/delete mines marks (x and y coordinates): ")
             val col = _scanner.nextInt()
             val row = _scanner.nextInt()
-            val markType = _scanner.nextLine()
-            //fixme
-            isMarkSetOrDeleted = true
-            if (markType == "mine") {
-                isMarkSetOrDeleted = _field.setOrDeleteMineMark(row - 1, col - 1)
-            } else if (markType == "free") {
-                isMarkSetOrDeleted = true
-                _field.setOrDeleteFreeMark(row - 1, col - 1)
+            val markType = _scanner.next()
+            //fixme: check if markType is not "mine" or "free"
+            isMarkSetOrDeleted = if (markType == "mine") {
+                _field.setOrDeleteMineMark(row - 1, col - 1)
+            } else {
+                _field.setFreeMark(row - 1, col - 1)
             }
         } while (!isMarkSetOrDeleted)
     }

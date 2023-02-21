@@ -2,8 +2,10 @@ package minesweeper.field
 
 import kotlin.random.Random
 
-const val UNKNOWN_CELL = '.'
+//TODO: figure out how to write enum class, that can contain cell content ('.', 'X', '1' .. '7)
+const val SAFE_CELL = '.'
 const val MINE_CELL = 'X'
+
 const val MARKED_MINE_CELL = '*'
 const val MARKED_FREE_CELL = '/'
 
@@ -13,24 +15,42 @@ enum class CellStatus {
     MARKED_FREE
 }
 
-class Cell(var content: Char = UNKNOWN_CELL, var status: CellStatus = CellStatus.UNKNOWN) {
+enum class GameStatus {
+    GAME,
+    DEFEAT,
+    VICTORY
+}
+
+class Cell(var content: Char = SAFE_CELL, var status: CellStatus = CellStatus.UNKNOWN) {
     fun printOpen() {
         print(content.toString())
     }
     fun printHidden() {
         when (status) {
-            CellStatus.UNKNOWN -> print(UNKNOWN_CELL.toString())
+            CellStatus.UNKNOWN -> print(SAFE_CELL.toString())
             CellStatus.MARKED_MINE -> print(MARKED_MINE_CELL.toString())
             CellStatus.MARKED_FREE -> {
                 when (content) {
-                    MARKED_FREE_CELL -> print(MARKED_FREE_CELL.toString())
+                    SAFE_CELL -> print(MARKED_FREE_CELL.toString())
                     else -> print(content.toString())
                 }
             }
         }
     }
+    fun printExploded() {
+        when (status) {
+            CellStatus.MARKED_FREE -> {
+                when (content) {
+                    SAFE_CELL -> print(MARKED_FREE_CELL.toString())
+                    else -> print(content.toString())
+                }
+            }
+            else -> print(content.toString())
+        }
+    }
 }
 class Field(private val _height: Int, private val _width: Int) {
+    var fieldStatus = GameStatus.GAME
     private val _field = MutableList(_height) { MutableList(_width) { Cell() } }
 
     // took this solution from here: https://hyperskill.org/projects/8/stages/47/implement#solutions-309746
@@ -50,9 +70,9 @@ class Field(private val _height: Int, private val _width: Int) {
     fun printOpenField() {
         printColumnCoordinates()
         printHorizontalDelimiters()
-        for (i in 0.._field.lastIndex) {
-            print("$i|")
-            for (cell in _field[i]) {
+        for (r in 0.._field.lastIndex) {
+            print("${r + 1}|")
+            for (cell in _field[r]) {
                 cell.printOpen()
             }
             println("|")
@@ -71,6 +91,18 @@ class Field(private val _height: Int, private val _width: Int) {
         }
         printHorizontalDelimiters()
     }
+    fun printExplodedField() {
+        printColumnCoordinates()
+        printHorizontalDelimiters()
+        for (r in 0.._field.lastIndex) {
+            print("${r + 1}|")
+            for (cell in _field[r]) {
+                cell.printExploded()
+            }
+            println("|")
+        }
+        printHorizontalDelimiters()
+    }
     fun setOrDeleteMineMark(row: Int, col: Int) = when {
         row !in 0 until _height || col !in 0 until _width -> {
             println("error: coordinates out of bounds")
@@ -82,48 +114,65 @@ class Field(private val _height: Int, private val _width: Int) {
                 CellStatus.UNKNOWN -> CellStatus.MARKED_MINE
                 else -> _field[row][col].status
             }
+            if (isFieldComplete()) {
+                fieldStatus = GameStatus.VICTORY
+            }
             true
         }
     }
-    fun setOrDeleteFreeMark(row: Int, col: Int) {
-        when {
+    fun setFreeMark(row: Int, col: Int) = when {
             row !in 0 until _height || col !in 0 until _width -> {
                 println("error: coordinates out of bounds")
                 false
             }
-            _field[row][col].status == CellStatus.MARKED_MINE -> {
-                println("YOU LOSE") //fixme
+            _field[row][col].content == MINE_CELL -> {
+                fieldStatus = GameStatus.DEFEAT
+                true
             }
             else -> {
-                setOrDeleteFreeMarkRecursive(row, col)
+                setFreeMarkRecursive(row, col)
+                if (isFieldComplete()) {
+                    fieldStatus = GameStatus.VICTORY
+                }
                 true
             }
         }
-    }
-//    fun isFieldMarkedCorrect(): Boolean {
-//        for (i in 0.._field.lastIndex) {
-//            for (cell in _field[i]) {
-//                if (cell.isMarkedMine != (cell.content == MINE_CELL)) {
-//                    return false
-//                }
-//            }
-//        }
-//        return true
-//    }
 
+    private fun isFieldComplete(): Boolean {
+        var isAllMinesMarked = true
+        var isAllEmptyCellsFree = true
+        for (r in 0.._field.lastIndex) {
+            for (cell in _field[r]) {
+                when (cell.content) {
+                    MINE_CELL -> when (cell.status) {
+                        CellStatus.MARKED_MINE -> {}
+                        else -> isAllMinesMarked = false
+                    }
+                    else -> when (cell.status) {
+                        CellStatus.MARKED_FREE -> {}
+                        else -> isAllEmptyCellsFree = false
+                    }
+                }
+                if (!(isAllMinesMarked || isAllEmptyCellsFree)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
     // took this solution from here: https://hyperskill.org/projects/8/stages/48/implement#solutions-190159
     private fun placeMine(row: Int, col: Int) {
         _field[row][col].content = MINE_CELL
         for (r in maxOf(row - 1, 0)..minOf(row + 1, _height - 1)) {
             for (c in maxOf(col - 1, 0)..minOf(col + 1, _width - 1)) {
                 when (_field[r][c].content) {
-                    UNKNOWN_CELL -> _field[r][c].content = '1'
+                    SAFE_CELL -> _field[r][c].content = '1'
                     in '1'..'7' -> _field[r][c].content++
                 }
             }
         }
     }
-    private fun setOrDeleteFreeMarkRecursive(row: Int, col: Int) {
+    private fun setFreeMarkRecursive(row: Int, col: Int) {
         when {
             row !in 0 until _height || col !in 0 until _width -> {
                 return
@@ -136,7 +185,11 @@ class Field(private val _height: Int, private val _width: Int) {
                 _field[row][col].status = CellStatus.MARKED_FREE
                 for (r in maxOf(row - 1, 0)..minOf(row + 1, _height - 1)) {
                     for (c in maxOf(col - 1, 0)..minOf(col + 1, _width - 1)) {
-                        setOrDeleteFreeMarkRecursive(r, c)
+                        when {
+                            r == row && c == col -> continue
+                            _field[r][c].status == CellStatus.MARKED_FREE -> continue
+                        }
+                        setFreeMarkRecursive(r, c)
                     }
                 }
             }
